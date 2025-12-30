@@ -103,5 +103,5 @@ fn main() {
     // println!("Running a 2 second timer");
     // let result = block_on(TimerFuture::new(Duration::from_secs(2)));
     let result = block_on(CounterFuture::new(10));
-    println!("Result: {:?}/n", result);
+    println!("Result: {:?}\n", result);
 }
