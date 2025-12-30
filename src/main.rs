@@ -1,4 +1,5 @@
 use std::future::Future;
+use std::os::unix::process;
 use std::pin::Pin;
 use std::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
 use std::time::{Duration, Instant};
@@ -97,11 +98,64 @@ fn dummy_waker() -> Waker {
 }
 
 
+
+// async await 
+async fn asyn_timer(duration: Duration) {
+    let start = Instant::now();
+
+    // await
+    loop {
+        if start.elapsed() >= duration {
+            break;
+        }
+    }
+
+    // yeild control
+    std::thread::sleep(Duration::from_millis(10));
+}
+
+
+// async fn that await other async fn
+async fn fetch_data(id: i32) -> String {
+    println!("fetching data for id: {}", id);
+    asyn_timer(Duration::from_millis(100)).await;
+    format!("Data for ID: {}", id)
+}
+
+async fn process_data(data: String) -> String {
+    println!("Processing: {}", data);
+    asyn_timer(Duration::from_millis(50)).await;
+    format!("Processed: {}", data)
+}
+
+async fn save_data(data: String) {
+    println!("saving: {}", data);
+    asyn_timer(Duration::from_millis(30)).await;
+    println!("saved: {}", data);
+}
+
+async fn full_pipeline(id: i32) {
+    let data = fetch_data(id).await;
+    let processed = process_data(data).await;
+    save_data(processed).await;
+}
+
+async fn seq_operations() {
+    let start = Instant::now();
+
+    full_pipeline(1).await;
+    full_pipeline(2).await;
+    full_pipeline(3).await;
+
+    println!("sequential tool: {:?}", start.elapsed());
+}
+
 fn main() {
 
     println!("Simple Aysnc executor");
     // println!("Running a 2 second timer");
     // let result = block_on(TimerFuture::new(Duration::from_secs(2)));
-    let result = block_on(CounterFuture::new(10));
-    println!("Result: {:?}\n", result);
+    // let result = block_on(CounterFuture::new(10));
+    block_on(seq_operations());
+    // println!("Result: {:?}\n", result);
 }
