@@ -1,4 +1,5 @@
 use std::future::{self, Future};
+use std::marker::PhantomPinned;
 use std::os::unix::process;
 use std::pin::Pin;
 use std::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
@@ -277,7 +278,56 @@ async fn nested_concurrent() {
 //     println!("sequential tool: {:?}", start.elapsed());
 // }
 
+
+
+// PIN demo
+
+struct SelfReferential {
+    data: String,
+    pointer: *const String, // point to data field
+}
+
+impl SelfReferential {
+    fn new(data: String) -> Self {
+        let mut s = Self {
+            data,
+            pointer: std::ptr::null()
+        };
+
+        s.pointer = &s.data as *const String;
+        s
+    }
+
+    pub fn get_data(&self) -> &str {
+        &self.data
+    }
+
+    pub fn get_via_pointer(&self) -> &str {
+        unsafe {&*self.pointer}
+    }
+}
+
+
+fn demo_problem() {
+    let mut instance = SelfReferential::new("Hello".to_string());
+
+    let moved_instance = instance;
+
+    println!("  Direct: {}", moved_instance.get_data());
+
+    println!("  Via pointer: {}", moved_instance.get_via_pointer());
+
+    // output
+    //   Direct: Hello
+    //   Via pointer: �{A��
+
+}
+
+
+
 fn main() {
+
+    demo_problem();
 
     // println!("Simple Aysnc executor");
     // println!("Running a 2 second timer");
@@ -287,9 +337,10 @@ fn main() {
     // println!("Result: {:?}\n", result);
 
 
-    block_on(sequential_demo());
+    // block_on(sequential_demo());
 
-    block_on(concurrent_demo());
+    // block_on(concurrent_demo());
     
-    block_on(nested_concurrent());
+    // block_on(nested_concurrent());
+
 }
